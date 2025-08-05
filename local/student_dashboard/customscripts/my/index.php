@@ -24,6 +24,11 @@
 
 require_once(__DIR__ . '/../../../../config.php');
 
+// Include completion library if it exists
+if (file_exists($CFG->dirroot . '/lib/completionlib.php')) {
+    require_once($CFG->dirroot . '/lib/completionlib.php');
+}
+
 // Require login
 require_login();
 
