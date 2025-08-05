@@ -25,6 +25,18 @@
 require_once(__DIR__ . '/../../../config.php');
 require_once($CFG->dirroot . '/lib/navigationlib.php');
 
+
+// Include completion library if it exists
+if (file_exists($CFG->dirroot . '/lib/completionlib.php')) {
+    require_once($CFG->dirroot . '/lib/completionlib.php');
+}
+
+// Include course category library if it exists
+if (file_exists($CFG->libdir . '/coursecatlib.php')) {
+    require_once($CFG->libdir . '/coursecatlib.php');
+}
+
+
 require_login();
 
 $PAGE->set_url('/my/index.php');
@@ -58,15 +70,28 @@ $incompletecourses = 0;
 
 // Calculate completion stats
 foreach ($enrolledcourses as $course) {
-    $completion = new completion_info($course);
-    if ($completion->is_enabled()) {
-        $percentage = progress::get_course_progress_percentage($course, $USER->id);
-        if ($percentage == 100) {
-            $completedcourses++;
+
+    // For now, we'll consider all courses as incomplete unless completion is specifically enabled
+    // This can be enhanced later with proper completion tracking
+    if (class_exists('completion_info')) {
+        $completion = new completion_info($course);
+        if ($completion->is_enabled()) {
+            // Simple check - this can be enhanced based on specific Moodle version
+            $params = array('userid' => $USER->id, 'course' => $course->id);
+            $completiondata = $DB->get_record('course_completions', $params);
+            if ($completiondata && $completiondata->timecompleted) {
+                $completedcourses++;
+            } else {
+                $incompletecourses++;
+            }
+
         } else {
             $incompletecourses++;
         }
     } else {
+
+        // Fallback if completion tracking is not available
+
         $incompletecourses++;
     }
 }
