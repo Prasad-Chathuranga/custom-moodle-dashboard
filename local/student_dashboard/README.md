@@ -25,7 +25,28 @@ The dashboard includes:
 
 ## Installation
 
-### Method 1: Custom Scripts (Recommended)
+### Method 1: Direct Override (Recommended)
+
+1. Extract the plugin to your Moodle directory:
+   ```
+   /path/to/moodle/local/student_dashboard/
+   ```
+
+2. **IMPORTANT**: Backup your existing `/my/index.php` file:
+   ```bash
+   cp /path/to/moodle/my/index.php /path/to/moodle/my/index.php.backup
+   ```
+
+3. Copy the custom my/index.php file:
+   ```bash
+   cp /path/to/moodle/local/student_dashboard/my/index.php /path/to/moodle/my/index.php
+   ```
+   
+   **OR** use the provided `/my/index.php` file from this package.
+
+4. Log in as an administrator and visit the notifications page to complete the plugin installation.
+
+### Method 2: Custom Scripts (Alternative)
 
 1. Extract the plugin to your Moodle directory:
    ```
@@ -38,17 +59,6 @@ The dashboard includes:
    ```
 
 3. Log in as an administrator and visit the notifications page to complete the installation.
-
-### Method 2: Manual Installation
-
-1. Extract the plugin to your Moodle directory:
-   ```
-   /path/to/moodle/local/student_dashboard/
-   ```
-
-2. Log in as an administrator and visit the notifications page to complete the installation.
-
-3. For this method, students will be redirected to `/local/student_dashboard/my/index.php` instead of preserving the `/my` URL.
 
 ## Configuration
 
@@ -69,7 +79,7 @@ local/student_dashboard/
 │   └── observer.php              # Event observer for login handling
 ├── customscripts/
 │   └── my/
-│       └── index.php            # Custom script to override /my URL
+│       └── index.php            # Custom script to override /my URL (Method 2)
 ├── db/
 │   └── events.php               # Event observer definitions
 ├── lang/
@@ -81,6 +91,9 @@ local/student_dashboard/
 ├── styles.css                   # Custom CSS styles
 ├── version.php                  # Plugin version information
 └── README.md                    # This file
+
+PLUS:
+/my/index.php                    # Direct override file (Method 1)
 ```
 
 ## Customization
