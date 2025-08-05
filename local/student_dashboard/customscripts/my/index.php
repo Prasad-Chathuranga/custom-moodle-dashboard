@@ -29,6 +29,7 @@ if (file_exists($CFG->dirroot . '/lib/completionlib.php')) {
     require_once($CFG->dirroot . '/lib/completionlib.php');
 }
 
+
 // Require login
 require_login();
 

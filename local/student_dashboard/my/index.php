@@ -25,6 +25,7 @@
 require_once(__DIR__ . '/../../../config.php');
 require_once($CFG->dirroot . '/lib/navigationlib.php');
 
+
 // Include completion library if it exists
 if (file_exists($CFG->dirroot . '/lib/completionlib.php')) {
     require_once($CFG->dirroot . '/lib/completionlib.php');
@@ -34,6 +35,7 @@ if (file_exists($CFG->dirroot . '/lib/completionlib.php')) {
 if (file_exists($CFG->libdir . '/coursecatlib.php')) {
     require_once($CFG->libdir . '/coursecatlib.php');
 }
+
 
 require_login();
 
@@ -68,6 +70,7 @@ $incompletecourses = 0;
 
 // Calculate completion stats
 foreach ($enrolledcourses as $course) {
+
     // For now, we'll consider all courses as incomplete unless completion is specifically enabled
     // This can be enhanced later with proper completion tracking
     if (class_exists('completion_info')) {
@@ -81,11 +84,14 @@ foreach ($enrolledcourses as $course) {
             } else {
                 $incompletecourses++;
             }
+
         } else {
             $incompletecourses++;
         }
     } else {
+
         // Fallback if completion tracking is not available
+
         $incompletecourses++;
     }
 }
