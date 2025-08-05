@@ -60,4 +60,257 @@ class observer {
             }
         }
     }
+
+    /**
+     * Observer for dashboard viewed event
+     *
+     * @param \core\event\dashboard_viewed $event
+     */
+    public static function dashboard_viewed(\core\event\dashboard_viewed $event) {
+        global $USER, $DB, $PAGE, $SCRIPT;
+        
+        // Only intercept the my/index.php page
+        if ($SCRIPT !== '/my/index.php') {
+            return;
+        }
+        
+        // Make sure user is logged in
+        if (!isloggedin() || isguestuser()) {
+            return;
+        }
+        
+        // Check if user is a student
+        $studentrole = $DB->get_record('role', array('shortname' => 'student'));
+        if (!$studentrole) {
+            return;
+        }
+        
+        $isstudent = user_has_role_assignment($USER->id, $studentrole->id);
+        
+        if ($isstudent) {
+            // Start output buffering to capture and replace content
+            if (!ob_get_level()) {
+                ob_start();
+                register_shutdown_function(array(__CLASS__, 'replace_dashboard_content'));
+            }
+        }
+    }
+    
+    /**
+     * Replace dashboard content with custom student dashboard
+     */
+    public static function replace_dashboard_content() {
+        global $USER, $DB, $PAGE, $OUTPUT, $CFG;
+        
+        // Check if user is still a student
+        $studentrole = $DB->get_record('role', array('shortname' => 'student'));
+        if (!$studentrole) {
+            return;
+        }
+        
+        $isstudent = user_has_role_assignment($USER->id, $studentrole->id);
+        if (!$isstudent) {
+            return;
+        }
+        
+        // Get the buffered content
+        $content = ob_get_contents();
+        ob_clean();
+        
+        // Generate our custom dashboard
+        $customcontent = self::generate_custom_dashboard();
+        
+        // Output our custom content instead
+        echo $customcontent;
+    }
+    
+    /**
+     * Generate the custom student dashboard HTML
+     *
+     * @return string The custom dashboard HTML
+     */
+    private static function generate_custom_dashboard() {
+        global $PAGE, $OUTPUT, $USER, $DB, $CFG;
+        
+        // Include completion library if it exists
+        if (file_exists($CFG->dirroot . '/lib/completionlib.php')) {
+            require_once($CFG->dirroot . '/lib/completionlib.php');
+        }
+        
+        // Set up the page
+        $PAGE->set_url('/my/index.php');
+        $PAGE->set_context(\context_user::instance($USER->id));
+        $PAGE->set_title(get_string('learningdashboard', 'local_student_dashboard'));
+        $PAGE->set_heading(get_string('learningdashboard', 'local_student_dashboard'));
+        $PAGE->set_pagetype('my-index');
+        
+        // Add CSS
+        $PAGE->requires->css('/local/student_dashboard/styles.css');
+        
+        // Get student data
+        $enrolledcourses = enrol_get_my_courses('summary', 'fullname ASC');
+        $totalcourses = count($enrolledcourses);
+        $completedcourses = 0;
+        $incompletecourses = 0;
+        
+        // Calculate completion stats
+        foreach ($enrolledcourses as $course) {
+            if (class_exists('completion_info')) {
+                $completion = new \completion_info($course);
+                if ($completion->is_enabled()) {
+                    $params = array('userid' => $USER->id, 'course' => $course->id);
+                    $completiondata = $DB->get_record('course_completions', $params);
+                    if ($completiondata && $completiondata->timecompleted) {
+                        $completedcourses++;
+                    } else {
+                        $incompletecourses++;
+                    }
+                } else {
+                    $incompletecourses++;
+                }
+            } else {
+                $incompletecourses++;
+            }
+        }
+        
+        // Start building the HTML
+        ob_start();
+        
+        echo $OUTPUT->header();
+        ?>
+        
+        <div class="student-dashboard">
+            <!-- Header Section -->
+            <div class="dashboard-header">
+                <div class="welcome-section">
+                    <div class="welcome-text">
+                        <h1><?php echo get_string('learningdashboard', 'local_student_dashboard'); ?></h1>
+                        <p><?php echo get_string('dashboardwelcome', 'local_student_dashboard', fullname($USER)); ?></p>
+                    </div>
+                    <div class="user-avatar">
+                        <?php echo $OUTPUT->user_picture($USER, array('size' => 100, 'class' => 'avatar-image')); ?>
+                    </div>
+                </div>
+                
+                <!-- Information Bar -->
+                <div class="info-bar">
+                    <div class="info-item">
+                        <i class="fa fa-info-circle"></i>
+                        <span><?php echo get_string('infobartext', 'local_student_dashboard'); ?></span>
+                        <button class="close-info">×</button>
+                    </div>
+                </div>
+            </div>
+        
+            <!-- User Profile Section -->
+            <div class="user-profile-section">
+                <div class="profile-card">
+                    <div class="profile-avatar">
+                        <?php echo $OUTPUT->user_picture($USER, array('size' => 60)); ?>
+                    </div>
+                    <div class="profile-info">
+                        <h3><?php echo fullname($USER); ?></h3>
+                        <p><?php echo get_string('userrole', 'local_student_dashboard'); ?></p>
+                        <a href="<?php echo $CFG->wwwroot; ?>/user/profile.php" class="view-profile-link">
+                            <?php echo get_string('viewprofile', 'local_student_dashboard'); ?> →
+                        </a>
+                    </div>
+                </div>
+        
+                <!-- Stats Cards -->
+                <div class="stats-section">
+                    <!-- Badges -->
+                    <div class="stat-card badges-card">
+                        <h4><?php echo get_string('badges', 'local_student_dashboard'); ?></h4>
+                        <div class="badge-icons">
+                            <div class="badge-item">
+                                <div class="badge-icon badge-basic"></div>
+                            </div>
+                            <div class="badge-item">
+                                <div class="badge-icon badge-intermediate"></div>
+                            </div>
+                            <div class="badge-item">
+                                <div class="badge-icon badge-advanced"></div>
+                            </div>
+                            <div class="badge-item">
+                                <div class="badge-icon badge-expert"></div>
+                            </div>
+                        </div>
+                    </div>
+        
+                    <!-- Course Stats -->
+                    <div class="stat-card">
+                        <div class="stat-item">
+                            <span class="stat-label"><?php echo get_string('enrolled', 'local_student_dashboard'); ?></span>
+                            <span class="stat-value enrolled"><?php echo $totalcourses; ?></span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-item">
+                            <span class="stat-label"><?php echo get_string('completed', 'local_student_dashboard'); ?></span>
+                            <span class="stat-value completed"><?php echo $completedcourses; ?></span>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-item">
+                            <span class="stat-label"><?php echo get_string('incomplete', 'local_student_dashboard'); ?></span>
+                            <span class="stat-value incomplete"><?php echo $incompletecourses; ?></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        
+            <!-- Recently Accessed Items -->
+            <div class="recent-items-section">
+                <h3><?php echo get_string('recentlyaccessed', 'local_student_dashboard'); ?></h3>
+                
+                <div class="recent-items-grid">
+                    <?php foreach ($enrolledcourses as $course): ?>
+                        <div class="recent-item-card">
+                            <div class="item-icon">
+                                <i class="fa fa-book"></i>
+                            </div>
+                            <div class="item-content">
+                                <h4><?php echo format_string($course->fullname); ?></h4>
+                                <p><?php echo get_string('course'); ?></p>
+                            </div>
+                            <a href="<?php echo $CFG->wwwroot; ?>/course/view.php?id=<?php echo $course->id; ?>" 
+                               class="item-link" aria-label="<?php echo get_string('gotocourse', 'local_student_dashboard', format_string($course->fullname)); ?>"></a>
+                        </div>
+                    <?php endforeach; ?>
+                    
+                    <?php if (empty($enrolledcourses)): ?>
+                        <div class="no-items">
+                            <p><?php echo get_string('norecentitems', 'local_student_dashboard'); ?></p>
+                        </div>
+                    <?php endif; ?>
+                </div>
+        
+                <a href="<?php echo $CFG->wwwroot; ?>/course/" class="view-more-btn">
+                    <?php echo get_string('viewmore', 'local_student_dashboard'); ?>
+                </a>
+            </div>
+        </div>
+        
+        <script>
+        // Close info bar functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const closeBtn = document.querySelector('.close-info');
+            const infoBar = document.querySelector('.info-bar');
+            
+            if (closeBtn && infoBar) {
+                closeBtn.addEventListener('click', function() {
+                    infoBar.style.display = 'none';
+                });
+            }
+        });
+        </script>
+        
+        <?php
+        echo $OUTPUT->footer();
+        
+        return ob_get_clean();
+    }
 }

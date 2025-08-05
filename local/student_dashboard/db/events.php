@@ -29,4 +29,8 @@ $observers = array(
         'eventname' => '\core\event\user_loggedin',
         'callback' => '\local_student_dashboard\observer::user_loggedin',
     ),
+    array(
+        'eventname' => '\core\event\dashboard_viewed',
+        'callback' => '\local_student_dashboard\observer::dashboard_viewed',
+    ),
 );

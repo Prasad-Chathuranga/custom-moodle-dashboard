@@ -25,26 +25,16 @@ The dashboard includes:
 
 ## Installation
 
-### Method 1: Direct Override (Recommended)
+### Method 1: Plugin Only (Recommended - No Core Files Modified)
 
 1. Extract the plugin to your Moodle directory:
    ```
    /path/to/moodle/local/student_dashboard/
    ```
 
-2. **IMPORTANT**: Backup your existing `/my/index.php` file:
-   ```bash
-   cp /path/to/moodle/my/index.php /path/to/moodle/my/index.php.backup
-   ```
+2. Log in as an administrator and visit the notifications page to complete the plugin installation.
 
-3. Copy the custom my/index.php file:
-   ```bash
-   cp /path/to/moodle/local/student_dashboard/my/index.php /path/to/moodle/my/index.php
-   ```
-   
-   **OR** use the provided `/my/index.php` file from this package.
-
-4. Log in as an administrator and visit the notifications page to complete the plugin installation.
+3. **That's it!** The plugin uses Moodle's event system and output buffering to intercept the `/my` page for students without modifying any core files.
 
 ### Method 2: Custom Scripts (Alternative)
 
@@ -64,8 +54,9 @@ The dashboard includes:
 
 No additional configuration is required. The plugin automatically:
 - Detects users with the 'student' role
-- Redirects them to the custom dashboard
+- Intercepts the `/my` page and shows custom dashboard content
 - Maintains the original dashboard for non-student users
+- Preserves the clean `/my/` URL without any plugin paths
 
 ## User Role Detection
 
@@ -92,8 +83,8 @@ local/student_dashboard/
 ├── version.php                  # Plugin version information
 └── README.md                    # This file
 
-PLUS:
-/my/index.php                    # Direct override file (Method 1)
+PLUS (for Method 2 only):
+/my/index.php                    # Direct override file (Method 2)
 ```
 
 ## Customization
